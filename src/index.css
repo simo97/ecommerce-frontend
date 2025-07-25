@@ -1,8 +1,63 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+@theme {
+  --color-primary: #03A6A1;
+  --color-primary-50: #E6F7F6;
+  --color-primary-100: #CCF0EE;
+  --color-primary-200: #99E0DC;
+  --color-primary-300: #66D1CB;
+  --color-primary-400: #33C1B9;
+  --color-primary-500: #03A6A1;
+  --color-primary-600: #028480;
+  --color-primary-700: #026360;
+  --color-primary-800: #014240;
+  --color-primary-900: #012120;
+
+  --color-secondary: #FFE3BB;
+  --color-secondary-50: #FFFCF7;
+  --color-secondary-100: #FFF8ED;
+  --color-secondary-200: #FFF0D4;
+  --color-secondary-300: #FFE9BB;
+  --color-secondary-400: #FFE6A2;
+  --color-secondary-500: #FFE3BB;
+  --color-secondary-600: #FFD689;
+  --color-secondary-700: #FFC857;
+  --color-secondary-800: #FFBB25;
+  --color-secondary-900: #E6A000;
+
+  --color-accent: #FFA673;
+  --color-accent-50: #FFF4ED;
+  --color-accent-100: #FFE9DB;
+  --color-accent-200: #FFD3B7;
+  --color-accent-300: #FFBD93;
+  --color-accent-400: #FFB26F;
+  --color-accent-500: #FFA673;
+  --color-accent-600: #FF8B3D;
+  --color-accent-700: #FF7007;
+  --color-accent-800: #D15500;
+  --color-accent-900: #9D4000;
+
+  --color-error: #FF4F0F;
+  --color-error-50: #FFE5D9;
+  --color-error-100: #FFCCB3;
+  --color-error-200: #FF9966;
+  --color-error-300: #FF7733;
+  --color-error-400: #FF6619;
+  --color-error-500: #FF4F0F;
+  --color-error-600: #E6460E;
+  --color-error-700: #CC3D0C;
+  --color-error-800: #B3340A;
+  --color-error-900: #992B08;
+
+  --color-success: #03A6A1;
+  --color-success-50: #E6F7F6;
+  --color-success-100: #CCF0EE;
+  --color-success-200: #99E0DC;
+  --color-success-300: #66D1CB;
+  --color-success-400: #33C1B9;
+  --color-success-500: #03A6A1;
+  --color-success-600: #028480;
+  --color-success-700: #026360;
+  --color-success-800: #014240;
+  --color-success-900: #012120;
 }
