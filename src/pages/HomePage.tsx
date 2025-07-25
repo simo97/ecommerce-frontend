@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ProductCard from '../components/ProductCard';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -174,45 +175,10 @@ export default function HomePage() {
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
-            <div
+            <ProductCard
               key={product.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-            >
-              {/* Placeholder Image */}
-              <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                <svg
-                  className="w-16 h-16 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                  {product.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-3 overflow-hidden">
-                  {product.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-primary">
-                    {product.price}€
-                  </span>
-                  <button className="px-4 py-2 bg-primary text-white text-sm rounded-md hover:bg-primary-600 transition-colors duration-200">
-                    Ajouter
-                  </button>
-                </div>
-              </div>
-            </div>
+              product={product}
+            />
           ))}
         </div>
 
