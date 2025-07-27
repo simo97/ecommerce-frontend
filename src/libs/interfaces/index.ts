@@ -120,21 +120,20 @@ export interface OrderSummaryDto {
   createdAt: Date;
 }
 
-// Frontend-specific interfaces
 export interface ApiResponse<T> {
   data: T;
   message?: string;
   status: number;
 }
 
-// Component props interfaces
+
 export interface ProductCardProps {
   product: Product;
   showStock?: boolean;
   showAddToCart?: boolean;
 }
 
-// State management interfaces
+
 export interface EcommerceState {
   user: User | null;
   cart: Cart | null;
@@ -151,4 +150,56 @@ export interface EcommerceActions {
   createOrder: (orderData: CreateOrderDto) => Promise<Order>;
   getOrders: () => Promise<Order[]>;
   getOrderSummaries: () => Promise<OrderSummaryDto[]>;
+}
+
+// Additional API request/response interfaces
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface ProductQuery {
+  categoryId?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: 'name' | 'price' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface ProductListResponse {
+  products: Product[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface OrderQuery {
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface OrderListResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
