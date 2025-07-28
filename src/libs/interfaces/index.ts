@@ -152,7 +152,6 @@ export interface EcommerceActions {
   getOrderSummaries: () => Promise<OrderSummaryDto[]>;
 }
 
-// Additional API request/response interfaces
 export interface LoginDto {
   email: string;
   password: string;
@@ -172,7 +171,7 @@ export interface AuthResponse {
 }
 
 export interface ProductQuery {
-  categoryId?: string;
+  category?: string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -182,12 +181,6 @@ export interface ProductQuery {
   limit?: number;
 }
 
-export interface ProductListResponse {
-  products: Product[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
 
 export interface OrderQuery {
   status?: string;
@@ -202,4 +195,21 @@ export interface OrderListResponse {
   total: number;
   page: number;
   totalPages: number;
+}
+
+// Dashboard interfaces
+export interface DashboardRecentOrder {
+  id: string;
+  totalAmount: number;
+  status: OrderStatus;
+  customerName: string;
+  createdAt: string;
+}
+
+export interface AdminDashboardStats {
+  totalSales: number;
+  totalOrders: number;
+  totalProducts: number;
+  totalUsers: number;
+  recentOrders: DashboardRecentOrder[];
 }

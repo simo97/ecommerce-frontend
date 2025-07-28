@@ -1,58 +1,102 @@
+import { useState, useEffect } from 'react';
+import { apiClient } from '../../libs/api/client.js';
+import type { AdminDashboardStats, OrderStatus } from '../../libs/interfaces/index.js';
+
 export default function AdminDashboard() {
-  const stats = [
+  const [dashboardData, setDashboardData] = useState<AdminDashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiClient.dashboard.getAdminDashboard();
+        if (response.data) {
+          setDashboardData(response.data);
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to load dashboard data');
+        console.error('Dashboard API error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'XAF',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
+  const getStatIcon = (type: string) => {
+    switch (type) {
+      case 'sales':
+        return (
+          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+          </svg>
+        );
+      case 'orders':
+        return (
+          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        );
+      case 'products':
+        return (
+          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        );
+      case 'users':
+        return (
+          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const stats = dashboardData ? [
     {
       title: 'Total des ventes',
-      value: '2,847,500 FCFA',
-      change: '+12.5%',
-      changeType: 'positive',
-      icon: (
-        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-      )
+      value: formatCurrency(dashboardData.totalSales),
+      icon: getStatIcon('sales')
     },
     {
       title: 'Commandes',
-      value: '156',
-      change: '+8.2%',
-      changeType: 'positive',
-      icon: (
-        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      )
+      value: dashboardData.totalOrders.toString(),
+      icon: getStatIcon('orders')
     },
     {
       title: 'Produits',
-      value: '89',
-      change: '+3.1%',
-      changeType: 'positive',
-      icon: (
-        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      )
+      value: dashboardData.totalProducts.toString(),
+      icon: getStatIcon('products')
     },
     {
       title: 'Utilisateurs',
-      value: '1,247',
-      change: '+15.3%',
-      changeType: 'positive',
-      icon: (
-        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-      )
+      value: dashboardData.totalUsers.toString(),
+      icon: getStatIcon('users')
     }
-  ];
-
-  const recentOrders = [
-    { id: '#12345', customer: 'Jean Dupont', amount: '89,500 FCFA', status: 'En attente', date: '2024-01-15' },
-    { id: '#12346', customer: 'Marie Martin', amount: '156,000 FCFA', status: 'Expédiée', date: '2024-01-15' },
-    { id: '#12347', customer: 'Pierre Durand', amount: '45,200 FCFA', status: 'Livrée', date: '2024-01-14' },
-    { id: '#12348', customer: 'Sophie Bernard', amount: '78,900 FCFA', status: 'En traitement', date: '2024-01-14' },
-    { id: '#12349', customer: 'Thomas Moreau', amount: '234,700 FCFA', status: 'Confirmée', date: '2024-01-13' }
-  ];
+  ] : [];
 
   const lowStockProducts = [
     { name: 'Smartphone Premium', stock: 3, category: 'Électronique' },
@@ -61,16 +105,67 @@ export default function AdminDashboard() {
     { name: 'Montre Connectée', stock: 2, category: 'Électronique' }
   ];
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case 'En attente': return 'bg-secondary-100 text-secondary-800';
-      case 'Confirmée': return 'bg-primary-100 text-primary-800';
-      case 'En traitement': return 'bg-accent-100 text-accent-800';
-      case 'Expédiée': return 'bg-blue-100 text-blue-800';
-      case 'Livrée': return 'bg-success-100 text-success-800';
+      case 'pending': return 'bg-secondary-100 text-secondary-800';
+      case 'confirmed': return 'bg-primary-100 text-primary-800';
+      case 'processing': return 'bg-accent-100 text-accent-800';
+      case 'shipped': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-success-100 text-success-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const getStatusLabel = (status: OrderStatus) => {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'confirmed': return 'Confirmée';
+      case 'processing': return 'En traitement';
+      case 'shipped': return 'Expédiée';
+      case 'delivered': return 'Livrée';
+      case 'cancelled': return 'Annulée';
+      default: return status;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+            </div>
+          ))}
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des données du tableau de bord...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="flex">
+            <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h3 className="font-medium">Erreur de chargement</h3>
+              <p className="text-sm mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -82,14 +177,6 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">{stat.title}</p>
                 <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
-                <div className="flex items-center mt-2">
-                  <span className={`text-sm font-medium ${
-                    stat.changeType === 'positive' ? 'text-success-600' : 'text-error-600'
-                  }`}>
-                    {stat.change}
-                  </span>
-                  <span className="text-gray-500 text-sm ml-1">ce mois</span>
-                </div>
               </div>
               <div className="bg-primary-50 p-3 rounded-lg">
                 {stat.icon}
@@ -112,23 +199,27 @@ export default function AdminDashboard() {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentOrders.map((order) => (
+              {dashboardData?.recentOrders.map((order) => (
                 <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-gray-800">{order.id}</p>
+                      <p className="font-medium text-gray-800">#{order.id.slice(-8)}</p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {order.status}
+                        {getStatusLabel(order.status)}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-sm">{order.customer}</p>
+                    <p className="text-gray-600 text-sm">{order.customerName}</p>
                     <div className="flex items-center justify-between mt-1">
-                      <p className="text-primary font-semibold text-sm">{order.amount}</p>
-                      <p className="text-gray-500 text-xs">{order.date}</p>
+                      <p className="text-primary font-semibold text-sm">{formatCurrency(order.totalAmount)}</p>
+                      <p className="text-gray-500 text-xs">{formatDate(order.createdAt)}</p>
                     </div>
                   </div>
                 </div>
-              ))}
+              )) || (
+                <div className="text-center py-4 text-gray-500">
+                  Aucune commande récente
+                </div>
+              )}
             </div>
           </div>
         </div>

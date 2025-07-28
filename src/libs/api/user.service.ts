@@ -15,7 +15,7 @@ export interface RegisterDto {
 
 export interface AuthResponse {
   user: User;
-  accessToken: string;
+  access_token: string;
   refreshToken: string;
 }
 
@@ -25,7 +25,7 @@ export class UserService extends BaseResource {
   }
 
   async login(credentials: LoginDto): Promise<ApiResponse<AuthResponse>> {
-    return this.post<AuthResponse>('/auth/login', credentials);
+    return this.post<AuthResponse>('/auth/signin', credentials);
   }
 
   async register(userData: RegisterDto): Promise<ApiResponse<AuthResponse>> {

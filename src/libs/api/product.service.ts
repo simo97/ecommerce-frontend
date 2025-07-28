@@ -13,10 +13,15 @@ export interface ProductQuery {
 }
 
 export interface ProductListResponse {
-  products: Product[];
-  total: number;
-  page: number;
-  totalPages: number;
+  data: Product[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export class ProductService extends BaseResource {
@@ -35,36 +40,47 @@ export class ProductService extends BaseResource {
       });
     }
 
-    const endpoint = `/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    const endpoint = `/catalogue${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
     return this.get<ProductListResponse>(endpoint);
   }
 
   async getProduct(id: string): Promise<ApiResponse<Product>> {
-    return this.get<Product>(`/products/${id}`);
-  }
-
-  async getFeaturedProducts(): Promise<ApiResponse<Product[]>> {
-    return this.get<Product[]>('/products/featured');
+    return this.get<Product>(`/catalogue/${id}`);
   }
 
   async searchProducts(query: string): Promise<ApiResponse<Product[]>> {
-    return this.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}`);
+    return this.get<Product[]>(`/catalogue/search?q=${encodeURIComponent(query)}`);
   }
 
   async getProductsByCategory(categoryId: string): Promise<ApiResponse<Product[]>> {
-    return this.get<Product[]>(`/products/category/${categoryId}`);
+    return this.get<Product[]>(`/catalogue/category/${categoryId}`);
   }
 
   // Admin methods
   async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Product>> {
-    return this.post<Product>('/admin/products', productData);
+    return this.post<Product>('/catalogue/admin/products', productData);
   }
 
   async updateProduct(id: string, productData: Partial<Product>): Promise<ApiResponse<Product>> {
-    return this.patch<Product>(`/admin/products/${id}`, productData);
+    return this.patch<Product>(`/catalogue/admin/${id}`, productData);
   }
 
   async deleteProduct(id: string): Promise<ApiResponse<void>> {
-    return this.delete<void>(`/admin/products/${id}`);
+    return this.delete<void>(`/catalogue/admin/${id}`);
+  }
+
+  async getAdminProducts(query?: ProductQuery): Promise<ApiResponse<ProductListResponse>> {
+    const searchParams = new URLSearchParams();
+    
+    if (query) {
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
+
+    const endpoint = `/catalogue/admin/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    return this.get<ProductListResponse>(endpoint);
   }
 }

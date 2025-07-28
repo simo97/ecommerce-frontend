@@ -91,14 +91,14 @@ export abstract class BaseResource {
             data = text ? JSON.parse(text) : null as T;
         } catch (error) {
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`${response.statusText}`);
             }
             data = null as T;
         }
 
         if (!response.ok) {
             const errorMessage = (data as any)?.message || response.statusText || 'Request failed';
-            throw new Error(`HTTP ${response.status}: ${errorMessage}`);
+            throw new Error(`${errorMessage}`);
         }
 
         return {

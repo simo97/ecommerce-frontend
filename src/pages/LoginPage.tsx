@@ -1,13 +1,25 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { apiClient } from '../libs/api/client.js';
+import type { LoginDto } from '../libs/interfaces/index.js';
 import AuthLayout from './layouts/AuthLayout';
+import { useSetAtom } from 'jotai'
+import { userAtom, refreshTokenAtom, authTokenAtom } from "../libs/atoms.ts"
+
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
+  const setUser = useSetAtom(userAtom);
+  const setAuthToken = useSetAtom(authTokenAtom);
+  const setRefreshToken = useSetAtom(refreshTokenAtom);
+
+  const [formData, setFormData] = useState<LoginDto>({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -20,12 +32,35 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
-    // Mock login - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log('Login attempt:', formData);
-    setIsLoading(false);
+    try {
+      const response = await apiClient.users.login(formData);
+      
+      if (response.data?.access_token) {
+        console.log({response})
+        // Set authentication token for API client
+        apiClient.setAuthToken(response.data.access_token);
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('authToken', response.data.access_token);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Update Jotai store atoms
+        setUser(response.data.user);
+        setAuthToken(response.data.access_token);
+        setRefreshToken(response.data.refreshToken);
+
+        console.log("=========")
+        
+        navigate('/admin');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,6 +71,17 @@ export default function LoginPage() {
       alternativeLinkText="créez un nouveau compte"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="flex">
+              <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm">{error}</span>
+            </div>
+          </div>
+        )}
         
         {/* Email Field */}
         <div>

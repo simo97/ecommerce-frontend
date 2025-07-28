@@ -3,6 +3,7 @@ import { ProductService } from './product.service.js';
 import { CategoryService } from './category.service.js';
 import { CartService } from './cart.service.js';
 import { OrderService } from './order.service.js';
+import { DashboardService } from './dashboard.service.js';
 import type { HttpClientConfig } from './index.js';
 
 export class ApiClient {
@@ -11,6 +12,7 @@ export class ApiClient {
   private _categories: CategoryService;
   private _cart: CartService;
   private _orders: OrderService;
+  private _dashboard: DashboardService;
   private config: HttpClientConfig;
 
   constructor(config: HttpClientConfig = {}) {
@@ -24,6 +26,7 @@ export class ApiClient {
     this._categories = new CategoryService(this.config);
     this._cart = new CartService(this.config);
     this._orders = new OrderService(this.config);
+    this._dashboard = new DashboardService(this.config);
   }
 
   get users(): UserService {
@@ -46,6 +49,10 @@ export class ApiClient {
     return this._orders;
   }
 
+  get dashboard(): DashboardService {
+    return this._dashboard;
+  }
+
   // Global authentication methods
   setAuthToken(token: string): void {
     this._users.setAuthToken(token);
@@ -53,6 +60,7 @@ export class ApiClient {
     this._categories.setAuthToken(token);
     this._cart.setAuthToken(token);
     this._orders.setAuthToken(token);
+    this._dashboard.setAuthToken(token);
   }
 
   setSessionToken(sessionToken: string): void {
@@ -66,6 +74,7 @@ export class ApiClient {
     this._categories.removeAuthToken();
     this._cart.removeAuthToken();
     this._orders.removeAuthToken();
+    this._dashboard.removeAuthToken();
   }
 
   // Convenience method for updating base URL
@@ -77,6 +86,7 @@ export class ApiClient {
     this._categories = new CategoryService(this.config);
     this._cart = new CartService(this.config);
     this._orders = new OrderService(this.config);
+    this._dashboard = new DashboardService(this.config);
   }
 }
 
