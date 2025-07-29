@@ -51,9 +51,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
+      {/*Sidebar */}
       <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} bg-primary transition-all duration-300 flex flex-col`}>
-        {/* Header */}
+        {/*Header */}
         <div className="p-4 border-b border-primary-600">
           <div className="flex items-center justify-between">
             <div className={`${isSidebarOpen ? 'block' : 'hidden'} text-white`}>
@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/*   Navigation */}
         <nav className="flex-1 p-4 space-y-2">
           {navigation.map((item) => {
             const isActive = currentPath === item.href || 
@@ -126,7 +126,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
