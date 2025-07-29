@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { apiClient } from '../../libs/api/client.js';
 import type { Product, ProductQuery, Category } from '../../libs/interfaces/index.js';
+import { formatCurrency, getProductStatusColor, getStockStatusColor } from '../../libs/utils/index.js';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,7 +42,7 @@ export default function AdminProducts() {
 
       const response = await apiClient.products.getAdminProducts(query);
       
-      if (response.data) {
+      if (response.data.data.length > 0) {
         setProducts(response.data.data);
         setTotalProducts(response.data.meta.total);
       }
@@ -113,13 +114,6 @@ export default function AdminProducts() {
     console.log('View product:', product);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const columns = [
     {
@@ -155,13 +149,7 @@ export default function AdminProducts() {
       sortable: true,
       width: '100px',
       cell: (row: Product) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          row.stockQuantity > 20 
-            ? 'bg-success-100 text-success-800' 
-            : row.stockQuantity > 10 
-              ? 'bg-secondary-100 text-secondary-800' 
-              : 'bg-error-100 text-error-800'
-        }`}>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStockStatusColor(row.stockQuantity)}`}>
           {row.stockQuantity}
         </span>
       )
@@ -186,11 +174,7 @@ export default function AdminProducts() {
       sortable: true,
       width: '100px',
       cell: (row: Product) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          row.isActive 
-            ? 'bg-success-100 text-success-800' 
-            : 'bg-error-100 text-error-800'
-        }`}>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getProductStatusColor(row.isActive)}`}>
           {row.isActive ? 'Actif' : 'Inactif'}
         </span>
       )

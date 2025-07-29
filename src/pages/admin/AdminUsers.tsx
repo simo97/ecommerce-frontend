@@ -1,103 +1,93 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { type User, UserRole } from '../../libs/interfaces';
+import { apiClient } from '../../libs/api/client.js';
+import { type UserQuery} from '../../libs/api/user.service.js';
+import { formatCurrency, formatDate, getUserRoleColor, getUserRoleLabel } from '../../libs/utils/index.js';
+import { type UserStats } from '../../libs/api/user.service.js';
 
 export default function AdminUsers() {
-  const [users] = useState<User[]>([
-    {
-      id: '1',
-      email: 'jean.dupont@email.com',
-      firstName: 'Jean',
-      lastName: 'Dupont',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-15')
-    },
-    {
-      id: '2',
-      email: 'marie.martin@email.com',
-      firstName: 'Marie',
-      lastName: 'Martin',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2024-01-08'),
-      updatedAt: new Date('2024-01-14')
-    },
-    {
-      id: '3',
-      email: 'pierre.durand@email.com',
-      firstName: 'Pierre',
-      lastName: 'Durand',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2024-01-05'),
-      updatedAt: new Date('2024-01-13')
-    },
-    {
-      id: '4',
-      email: 'sophie.bernard@email.com',
-      firstName: 'Sophie',
-      lastName: 'Bernard',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2024-01-03'),
-      updatedAt: new Date('2024-01-12')
-    },
-    {
-      id: '5',
-      email: 'thomas.moreau@email.com',
-      firstName: 'Thomas',
-      lastName: 'Moreau',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-11')
-    },
-    {
-      id: '6',
-      email: 'admin@ktalog.com',
-      firstName: 'Admin',
-      lastName: 'User',
-      role: UserRole.ADMIN,
-      orders: [],
-      createdAt: new Date('2023-12-01'),
-      updatedAt: new Date('2024-01-15')
-    },
-    {
-      id: '7',
-      email: 'claire.dubois@email.com',
-      firstName: 'Claire',
-      lastName: 'Dubois',
-      role: UserRole.CUSTOMER,
-      orders: [],
-      createdAt: new Date('2023-12-28'),
-      updatedAt: new Date('2024-01-10')
-    },
-    {
-      id: '8',
-      email: 'manager@ktalog.com',
-      firstName: 'Manager',
-      lastName: 'Store',
-      role: UserRole.ADMIN,
-      orders: [],
-      createdAt: new Date('2023-12-15'),
-      updatedAt: new Date('2024-01-14')
-    }
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersStats, setUsersStats] = useState<{ [userId: string]: UserStats }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
-  const [filterText, setFilterText] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-
-  const filteredItems = users.filter(item => {
-    const matchesText = item.email.toLowerCase().includes(filterText.toLowerCase()) ||
-                       `${item.firstName} ${item.lastName}`.toLowerCase().includes(filterText.toLowerCase()) ||
-                       item.id.toLowerCase().includes(filterText.toLowerCase());
-    
-    const matchesRole = !roleFilter || item.role === roleFilter;
-    
-    return matchesText && matchesRole;
+  const [filters, setFilters] = useState({
+    search: '',
+    role: '',
+    activityFilter: ''
   });
+
+  useEffect(() => {
+    fetchUsers();
+    // fetchUsersStats();
+  }, [currentPage, perPage, filters]);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const query: UserQuery = {
+        page: currentPage,
+        limit: perPage,
+        role: filters.role || undefined,
+        search: filters.search || undefined,
+        activityFilter: filters.activityFilter || undefined,
+      };
+
+      const response = await apiClient.users.getAllUsers(query);
+      
+      if (response.data.data.length > 0) {
+        setUsers(response.data.data);
+        setTotalUsers(response.data.data.length);
+      }
+    } catch (error) {
+      console.error('Users API error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUsersStats = async () => {
+    try {
+      const response = await apiClient.users.getAllUsersStats();
+      if (response.data) {
+        setUsersStats(response.data);
+      }
+    } catch (error) {
+      console.error('Users stats API error:', error);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    if (!filters.search) return true;
+    
+    const searchLower = filters.search.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower) ||
+      user.id?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      role: '',
+      activityFilter: ''
+    });
+    setCurrentPage(1);
+  };
 
   const handleView = (user: User) => {
     console.log('View user:', user);
@@ -107,45 +97,43 @@ export default function AdminUsers() {
     console.log('Edit user:', user);
   };
 
-  const handleDelete = (user: User) => {
-    console.log('Delete user:', user);
+  const handleDelete = async (user: User) => {
+    if (!user.id) return;
+    
     if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.firstName} ${user.lastName}" ?`)) {
+      try {
+        await apiClient.users.deleteUser(user.id);
+        fetchUsers();
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        alert('Erreur lors de la suppression de l\'utilisateur');
+      }
     }
   };
 
-  const handleToggleRole = (user: User) => {
+  const handleToggleRole = async (user: User) => {
+    if (!user.id) return;
+    
     const newRole = user.role === UserRole.ADMIN ? UserRole.CUSTOMER : UserRole.ADMIN;
-    console.log('Toggle user role:', user.id, newRole);
-  };
-
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case UserRole.ADMIN: return 'bg-primary-100 text-primary-800';
-      case UserRole.CUSTOMER: return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+    
+    try {
+      await apiClient.users.updateUserRole(user.id, { role: newRole });
+      
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.id === user.id ? { ...u, role: newRole } : u
+        )
+      );
+      
+    } catch (error) {
+      console.error('Failed to update user role:', error);
+      alert('Erreur lors de la mise à jour du rôle utilisateur');
     }
   };
 
-  const getRoleLabel = (role: UserRole) => {
-    switch (role) {
-      case UserRole.ADMIN: return 'Admin';
-      case UserRole.CUSTOMER: return 'Client';
-      default: return role;
-    }
-  };
 
   const getUserStats = (userId: string) => {
-    const stats = {
-      '1': { ordersCount: 5, lastActivity: '2024-01-15', totalSpent: 450000 },
-      '2': { ordersCount: 8, lastActivity: '2024-01-14', totalSpent: 890000 },
-      '3': { ordersCount: 3, lastActivity: '2024-01-13', totalSpent: 267000 },
-      '4': { ordersCount: 12, lastActivity: '2024-01-12', totalSpent: 1200000 },
-      '5': { ordersCount: 7, lastActivity: '2024-01-11', totalSpent: 675000 },
-      '6': { ordersCount: 0, lastActivity: '2024-01-15', totalSpent: 0 },
-      '7': { ordersCount: 2, lastActivity: '2024-01-10', totalSpent: 125000 },
-      '8': { ordersCount: 0, lastActivity: '2024-01-14', totalSpent: 0 }
-    };
-    return stats[userId as keyof typeof stats] || { ordersCount: 0, lastActivity: 'N/A', totalSpent: 0 };
+    return usersStats[userId] || { ordersCount: 0, lastActivity: 'N/A', totalSpent: 0 };
   };
 
   const columns = [
@@ -182,8 +170,8 @@ export default function AdminUsers() {
       sortable: true,
       width: '100px',
       cell: (row: User) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(row.role)}`}>
-          {getRoleLabel(row.role)}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUserRoleColor(row.role)}`}>
+          {getUserRoleLabel(row.role)}
         </span>
       )
     },
@@ -205,7 +193,7 @@ export default function AdminUsers() {
       width: '140px',
       cell: (row: User) => (
         <span className="text-sm font-medium text-primary">
-          {getUserStats(row.id || '').totalSpent.toLocaleString()} FCFA
+          {formatCurrency(getUserStats(row.id || '').totalSpent)}
         </span>
       )
     },
@@ -216,7 +204,7 @@ export default function AdminUsers() {
       width: '120px',
       cell: (row: User) => (
         <div className="text-sm text-gray-600">
-          {row.createdAt?.toLocaleDateString('fr-FR')}
+          {row.createdAt ? formatDate(row.createdAt) : ''}
         </div>
       )
     },
@@ -227,7 +215,7 @@ export default function AdminUsers() {
       width: '140px',
       cell: (row: User) => (
         <div className="text-sm text-gray-600">
-          {new Date(getUserStats(row.id || '').lastActivity).toLocaleDateString('fr-FR')}
+          {getUserStats(row.id || '').lastActivity !== 'N/A' ? formatDate(getUserStats(row.id || '').lastActivity) : 'N/A'}
         </div>
       )
     },
@@ -360,7 +348,7 @@ export default function AdminUsers() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-bold text-gray-800">{users.length}</p>
+              <p className="text-2xl font-bold text-gray-800">{totalUsers}</p>
               <p className="text-gray-600 text-sm">Total utilisateurs</p>
             </div>
           </div>
@@ -413,10 +401,7 @@ export default function AdminUsers() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Filtres</h3>
           <button 
-            onClick={() => {
-              setFilterText('');
-              setRoleFilter('');
-            }}
+            onClick={resetFilters}
             className="text-primary hover:text-primary-600 text-sm font-medium"
           >
             Réinitialiser
@@ -428,16 +413,16 @@ export default function AdminUsers() {
             <input
               type="text"
               placeholder="Nom, email, ID..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
             <select 
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              value={filters.role}
+              onChange={(e) => handleFilterChange('role', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="">Tous les rôles</option>
@@ -447,7 +432,11 @@ export default function AdminUsers() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Activité</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+            <select 
+              value={filters.activityFilter}
+              onChange={(e) => handleFilterChange('activityFilter', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
               <option value="">Toute activité</option>
               <option value="active">Actif (7 derniers jours)</option>
               <option value="inactive">Inactif (plus de 30 jours)</option>
@@ -456,18 +445,44 @@ export default function AdminUsers() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="flex">
+            <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h3 className="font-medium">Erreur de chargement</h3>
+              <p className="text-sm mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <DataTable
           columns={columns}
-          data={filteredItems}
+          data={filteredUsers}
           pagination
-          paginationPerPage={10}
+          paginationServer
+          paginationTotalRows={totalUsers}
+          paginationDefaultPage={currentPage}
+          paginationPerPage={perPage}
           paginationRowsPerPageOptions={[5, 10, 15, 20]}
-          customStyles={customStyles}
+          onChangeRowsPerPage={setPerPage}
+          onChangePage={setCurrentPage}
+          // customStyles={customStyles}
           highlightOnHover
           striped
           responsive
+          progressPending={isLoading}
+          progressComponent={
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des utilisateurs...</p>
+            </div>
+          }
           noDataComponent={
             <div className="text-center py-12">
               <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

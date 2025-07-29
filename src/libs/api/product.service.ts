@@ -1,4 +1,4 @@
-import type { Product, ApiResponse } from '../interfaces/index.js';
+import type { Product, ApiResponse, DataListResponse } from '../interfaces/index.js';
 import { BaseResource, type HttpClientConfig } from './index.js';
 
 export interface ProductQuery {
@@ -12,24 +12,12 @@ export interface ProductQuery {
   limit?: number;
 }
 
-export interface ProductListResponse {
-  data: Product[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
 export class ProductService extends BaseResource {
   constructor(config?: HttpClientConfig) {
     super(config);
   }
 
-  async getProducts(query?: ProductQuery): Promise<ApiResponse<ProductListResponse>> {
+  async getProducts(query?: ProductQuery): Promise<ApiResponse<DataListResponse<Product>>> {
     const searchParams = new URLSearchParams();
     
     if (query) {
@@ -41,7 +29,7 @@ export class ProductService extends BaseResource {
     }
 
     const endpoint = `/catalogue${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-    return this.get<ProductListResponse>(endpoint);
+    return this.get<DataListResponse<Product>>(endpoint);
   }
 
   async getProduct(id: string): Promise<ApiResponse<Product>> {
@@ -69,7 +57,7 @@ export class ProductService extends BaseResource {
     return this.delete<void>(`/catalogue/admin/${id}`);
   }
 
-  async getAdminProducts(query?: ProductQuery): Promise<ApiResponse<ProductListResponse>> {
+  async getAdminProducts(query?: ProductQuery): Promise<ApiResponse<DataListResponse<Product>>> {
     const searchParams = new URLSearchParams();
     
     if (query) {
@@ -81,6 +69,6 @@ export class ProductService extends BaseResource {
     }
 
     const endpoint = `/catalogue/admin/products${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-    return this.get<ProductListResponse>(endpoint);
+    return this.get<DataListResponse<Product>>(endpoint);
   }
 }

@@ -1,4 +1,4 @@
-import type { Order, CreateOrderDto, UpdateOrderStatusDto, OrderSummaryDto, ApiResponse } from '../interfaces/index.js';
+import type { Order, CreateOrderDto, UpdateOrderStatusDto, OrderSummaryDto, ApiResponse, DataListResponse } from '../interfaces/index.js';
 import { BaseResource, type HttpClientConfig } from './index.js';
 
 export interface OrderQuery {
@@ -59,7 +59,7 @@ export class OrderService extends BaseResource {
   }
 
   // Admin order operations
-  async getAllOrders(query?: OrderQuery): Promise<ApiResponse<OrderListResponse>> {
+  async getAllOrders(query?: OrderQuery): Promise<ApiResponse<DataListResponse<Order>>> {
     const searchParams = new URLSearchParams();
     
     if (query) {
@@ -71,7 +71,7 @@ export class OrderService extends BaseResource {
     }
 
     const endpoint = `/orders/admin/all${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-    return this.get<OrderListResponse>(endpoint);
+    return this.get<DataListResponse<Order>>(endpoint);
   }
 
   async updateOrderStatus(orderId: string, statusUpdate: UpdateOrderStatusDto): Promise<ApiResponse<Order>> {

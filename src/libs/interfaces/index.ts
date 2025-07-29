@@ -213,3 +213,16 @@ export interface AdminDashboardStats {
   totalUsers: number;
   recentOrders: DashboardRecentOrder[];
 }
+
+// this is the list of any data from the backend
+export interface DataListResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }
+}

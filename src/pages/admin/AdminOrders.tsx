@@ -1,123 +1,108 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
-import { type Order, OrderStatus } from '../../libs/interfaces';
+import { type Order, OrderStatus, type OrderQuery } from '../../libs/interfaces';
+import { apiClient } from '../../libs/api/client.js';
+import { formatCurrency, formatDate, getOrderStatusColor, getOrderStatusLabel } from '../../libs/utils/index.js';
 
 export default function AdminOrders() {
-  const [orders] = useState<Order[]>([
-    {
-      id: 'ORD-12345',
-      totalAmount: 89500,
-      status: OrderStatus.PENDING,
-      user: { id: '1', email: 'jean.dupont@email.com', firstName: 'Jean', lastName: 'Dupont' } as any,
-      userId: '1',
-      items: [],
-      shippingAddress: '123 Rue de la Paix, Yaoundé',
-      notes: 'Livraison urgente',
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15')
-    },
-    {
-      id: 'ORD-12346',
-      totalAmount: 156000,
-      status: OrderStatus.SHIPPED,
-      user: { id: '2', email: 'marie.martin@email.com', firstName: 'Marie', lastName: 'Martin' } as any,
-      userId: '2',
-      items: [],
-      shippingAddress: '45 Avenue de la Liberté, Douala',
-      createdAt: new Date('2024-01-14'),
-      updatedAt: new Date('2024-01-15')
-    },
-    {
-      id: 'ORD-12347',
-      totalAmount: 45200,
-      status: OrderStatus.DELIVERED,
-      user: { id: '3', email: 'pierre.durand@email.com', firstName: 'Pierre', lastName: 'Durand' } as any,
-      userId: '3',
-      items: [],
-      shippingAddress: '78 Boulevard du Cameroun, Bafoussam',
-      createdAt: new Date('2024-01-13'),
-      updatedAt: new Date('2024-01-14')
-    },
-    {
-      id: 'ORD-12348',
-      totalAmount: 78900,
-      status: OrderStatus.PROCESSING,
-      user: { id: '4', email: 'sophie.bernard@email.com', firstName: 'Sophie', lastName: 'Bernard' } as any,
-      userId: '4',
-      items: [],
-      shippingAddress: '92 Rue de la République, Garoua',
-      createdAt: new Date('2024-01-12'),
-      updatedAt: new Date('2024-01-14')
-    },
-    {
-      id: 'ORD-12349',
-      totalAmount: 234700,
-      status: OrderStatus.CONFIRMED,
-      user: { id: '5', email: 'thomas.moreau@email.com', firstName: 'Thomas', lastName: 'Moreau' } as any,
-      userId: '5',
-      items: [],
-      shippingAddress: '15 Place de l\'Indépendance, Maroua',
-      createdAt: new Date('2024-01-11'),
-      updatedAt: new Date('2024-01-13')
-    },
-    {
-      id: 'ORD-12350',
-      totalAmount: 67300,
-      status: OrderStatus.CANCELLED,
-      user: { id: '6', email: 'claire.dubois@email.com', firstName: 'Claire', lastName: 'Dubois' } as any,
-      userId: '6',
-      items: [],
-      shippingAddress: '33 Rue des Cocotiers, Kribi',
-      notes: 'Annulée par le client',
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-11')
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
-  const [filterText, setFilterText] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-
-  const filteredItems = orders.filter(item => {
-    const matchesText = item.id!.toLowerCase().includes(filterText.toLowerCase()) ||
-                       `${item.user.firstName} ${item.user.lastName}`.toLowerCase().includes(filterText.toLowerCase()) ||
-                       item.user.email.toLowerCase().includes(filterText.toLowerCase());
-    
-    const matchesStatus = !statusFilter || item.status === statusFilter;
-    
-    return matchesText && matchesStatus;
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    startDate: '',
+    endDate: ''
   });
+
+  useEffect(() => {
+    fetchOrders();
+  }, [currentPage, perPage, filters]);
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const query: OrderQuery = {
+        page: currentPage,
+        limit: perPage,
+        status: filters.status || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+      };
+
+      const response = await apiClient.orders.getAllOrders(query);
+      console.log({response})
+      if (response.data.data.length > 0) {
+        setOrders(response.data.data);
+        setTotalOrders(response.data.data.length);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load orders');
+      console.error('Orders API error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const filteredOrders = orders.filter(order => {
+    if (!filters.search) return true;
+    
+    const searchLower = filters.search.toLowerCase();
+    return (
+      order.id?.toLowerCase().includes(searchLower) ||
+      `${order.user.firstName} ${order.user.lastName}`.toLowerCase().includes(searchLower) ||
+      order.user.email.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      startDate: '',
+      endDate: ''
+    });
+    setCurrentPage(1);
+  };
 
   const handleView = (order: Order) => {
     console.log('View order:', order);
   };
 
-  const handleUpdateStatus = (order: Order, newStatus: OrderStatus) => {
-    console.log('Update order status:', order.id, newStatus);
-  };
+  const handleUpdateStatus = async (order: Order, newStatus: OrderStatus) => {
+    if (!order.id) return;
 
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.PENDING: return 'bg-secondary-100 text-secondary-800';
-      case OrderStatus.CONFIRMED: return 'bg-primary-100 text-primary-800';
-      case OrderStatus.PROCESSING: return 'bg-accent-100 text-accent-800';
-      case OrderStatus.SHIPPED: return 'bg-blue-100 text-blue-800';
-      case OrderStatus.DELIVERED: return 'bg-success-100 text-success-800';
-      case OrderStatus.CANCELLED: return 'bg-error-100 text-error-800';
-      default: return 'bg-gray-100 text-gray-800';
+    try {
+      await apiClient.orders.updateOrderStatus(order.id, { status: newStatus });
+      
+      // Update the order in the local state
+      setOrders(prevOrders => 
+        prevOrders.map(o => 
+          o.id === order.id ? { ...o, status: newStatus } : o
+        )
+      );
+      
+      console.log(`Order ${order.id} status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      alert('Erreur lors de la mise à jour du statut de la commande');
     }
   };
 
-  const getStatusLabel = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.PENDING: return 'En attente';
-      case OrderStatus.CONFIRMED: return 'Confirmée';
-      case OrderStatus.PROCESSING: return 'En traitement';
-      case OrderStatus.SHIPPED: return 'Expédiée';
-      case OrderStatus.DELIVERED: return 'Livrée';
-      case OrderStatus.CANCELLED: return 'Annulée';
-      default: return status;
-    }
-  };
+
+
 
   const columns = [
     {
@@ -154,7 +139,7 @@ export default function AdminOrders() {
       width: '130px',
       cell: (row: Order) => (
         <span className="font-semibold text-primary">
-          {row.totalAmount.toLocaleString()} FCFA
+          {formatCurrency(row.totalAmount)}
         </span>
       )
     },
@@ -164,8 +149,8 @@ export default function AdminOrders() {
       sortable: true,
       width: '140px',
       cell: (row: Order) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}>
-          {getStatusLabel(row.status)}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getOrderStatusColor(row.status)}`}>
+          {getOrderStatusLabel(row.status)}
         </span>
       )
     },
@@ -176,7 +161,7 @@ export default function AdminOrders() {
       width: '120px',
       cell: (row: Order) => (
         <div className="text-sm text-gray-600">
-          {row.createdAt?.toLocaleDateString('fr-FR')}
+          {row.createdAt ? formatDate(row.createdAt) : ''}
         </div>
       )
     },
@@ -300,7 +285,7 @@ export default function AdminOrders() {
     const stats = Object.values(OrderStatus).map(status => ({
       status,
       count: orders.filter(order => order.status === status).length,
-      label: getStatusLabel(status)
+      label: getOrderStatusLabel(status)
     }));
     return stats;
   };
@@ -343,48 +328,53 @@ export default function AdminOrders() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Filtres</h3>
           <button 
-            onClick={() => {
-              setFilterText('');
-              setStatusFilter('');
-            }}
+            onClick={resetFilters}
             className="text-primary hover:text-primary-600 text-sm font-medium"
           >
             Réinitialiser
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Rechercher</label>
             <input
               type="text"
               placeholder="ID, nom du client, email..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Statut</label>
             <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="">Tous les statuts</option>
               {Object.values(OrderStatus).map(status => (
-                <option key={status} value={status}>{getStatusLabel(status)}</option>
+                <option key={status} value={status}>{getOrderStatusLabel(status)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Période</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option value="">Toutes les périodes</option>
-              <option value="today">Aujourd'hui</option>
-              <option value="week">Cette semaine</option>
-              <option value="month">Ce mois</option>
-              <option value="quarter">Ce trimestre</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date début</label>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) => handleFilterChange('startDate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date fin</label>
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) => handleFilterChange('endDate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
         </div>
       </div>
@@ -392,14 +382,26 @@ export default function AdminOrders() {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <DataTable
           columns={columns}
-          data={filteredItems}
+          data={filteredOrders}
           pagination
-          paginationPerPage={10}
+          paginationServer
+          paginationTotalRows={totalOrders}
+          paginationDefaultPage={currentPage}
+          paginationPerPage={perPage}
           paginationRowsPerPageOptions={[5, 10, 15, 20]}
+          onChangeRowsPerPage={setPerPage}
+          onChangePage={setCurrentPage}
           // customStyles={customStyles}
           highlightOnHover
           striped
           responsive
+          progressPending={isLoading}
+          progressComponent={
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des commandes...</p>
+            </div>
+          }
           noDataComponent={
             <div className="text-center py-12">
               <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

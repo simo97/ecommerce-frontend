@@ -100,7 +100,7 @@ export abstract class BaseResource {
             const errorMessage = (data as any)?.message || response.statusText || 'Request failed';
             throw new Error(`${errorMessage}`);
         }
-
+        console.log({data, status: response.status, message: response.statusText});
         return {
             data,
             message: response.statusText,
