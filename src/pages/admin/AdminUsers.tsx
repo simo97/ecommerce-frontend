@@ -5,10 +5,12 @@ import { apiClient } from '../../libs/api/client.js';
 import { type UserQuery} from '../../libs/api/user.service.js';
 import { formatCurrency, formatDate, getUserRoleColor, getUserRoleLabel } from '../../libs/utils/index.js';
 import { type UserStats } from '../../libs/api/user.service.js';
+import ErrorUI from '../../components/Error.tsx';
+
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
-  const [usersStats, setUsersStats] = useState<{ [userId: string]: UserStats }>({});
+  const [usersStats, ] = useState<{ [userId: string]: UserStats }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -53,16 +55,6 @@ export default function AdminUsers() {
     }
   };
 
-  const fetchUsersStats = async () => {
-    try {
-      const response = await apiClient.users.getAllUsersStats();
-      if (response.data) {
-        setUsersStats(response.data);
-      }
-    } catch (error) {
-      console.error('Users stats API error:', error);
-    }
-  };
 
   const filteredUsers = users.filter(user => {
     if (!filters.search) return true;
@@ -269,46 +261,6 @@ export default function AdminUsers() {
     }
   ];
 
-  const customStyles = {
-    header: {
-      style: {
-        minHeight: '56px',
-      },
-    },
-    headRow: {
-      style: {
-        backgroundColor: '#f9fafb',
-        borderBottomWidth: '1px',
-        borderBottomColor: '#e5e7eb',
-      },
-    },
-    headCells: {
-      style: {
-        fontSize: '12px',
-        fontWeight: '600',
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-      },
-    },
-    cells: {
-      style: {
-        fontSize: '14px',
-        color: '#111827',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-      },
-    },
-    rows: {
-      style: {
-        '&:hover': {
-          backgroundColor: '#f9fafb',
-        },
-      },
-    },
-  };
 
   const getTotalSpent = () => {
     return users.reduce((total, user) => {
@@ -316,11 +268,6 @@ export default function AdminUsers() {
     }, 0);
   };
 
-  const getTotalOrders = () => {
-    return users.reduce((total, user) => {
-      return total + getUserStats(user.id || '').ordersCount;
-    }, 0);
-  };
 
   return (
     <div className="space-y-6">
@@ -446,19 +393,7 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          <div className="flex">
-            <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <h3 className="font-medium">Erreur de chargement</h3>
-              <p className="text-sm mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {error && (<ErrorUI error={error} />)}
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <DataTable
@@ -472,7 +407,7 @@ export default function AdminUsers() {
           paginationRowsPerPageOptions={[5, 10, 15, 20]}
           onChangeRowsPerPage={setPerPage}
           onChangePage={setCurrentPage}
-          // customStyles={customStyles}
+          
           highlightOnHover
           striped
           responsive

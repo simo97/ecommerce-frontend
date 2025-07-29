@@ -108,7 +108,7 @@ export abstract class BaseResource {
         };
     }
 
-    protected setAuthToken(token: string): void {
+    public setAuthToken(token: string): void {
         this.defaultHeaders['Authorization'] = `Bearer ${token}`;
     }
 
@@ -116,7 +116,7 @@ export abstract class BaseResource {
         this.defaultHeaders['x-session-token'] = sessionToken;
     }
 
-    protected removeAuthToken(): void {
+    public removeAuthToken(): void {
         delete this.defaultHeaders['Authorization'];
     }
 }

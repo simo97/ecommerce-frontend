@@ -6,31 +6,43 @@ export default function CartPage() {
     {
       id: '1',
       quantity: 2,
+      cartId: 'cart-123',
+      productId: 'product-123',
       product: {
         id: '1',
         name: 'Smartphone Premium',
         description: 'Téléphone haute performance avec écran OLED',
-        price: 699
+        price: 699,
+        stockQuantity: 25,
+        isActive: true,
       }
     },
     {
       id: '2',
       quantity: 1,
+      cartId: 'cart-123',
+      productId: 'product-123',
       product: {
         id: '3',
         name: 'Casque Audio',
         description: 'Son immersif avec réduction de bruit',
-        price: 159
+        price: 159,
+        stockQuantity: 25,
+        isActive: true,
       }
     },
     {
       id: '3',
       quantity: 3,
+      cartId: 'cart-123',
+      productId: 'product-123',
       product: {
         id: '8',
         name: 'Café Premium',
         description: 'Grains torréfiés artisanalement',
-        price: 15
+        price: 15,
+        stockQuantity: 25,
+        isActive: true,
       }
     }
   ]);
@@ -136,7 +148,7 @@ export default function CartPage() {
                   {/* Quantity Controls */}
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.id!, item.quantity - 1)}
                       className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +157,7 @@ export default function CartPage() {
                     </button>
                     <span className="w-8 text-center font-medium">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.id!, item.quantity + 1)}
                       className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,7 +173,7 @@ export default function CartPage() {
 
                   {/* Remove Button */}
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.id!)}
                     className="text-error hover:text-error-600 p-2 transition-colors"
                     title="Supprimer l'article"
                   >

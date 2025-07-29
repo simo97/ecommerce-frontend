@@ -3,6 +3,7 @@ import DataTable from 'react-data-table-component';
 import { type Order, OrderStatus, type OrderQuery } from '../../libs/interfaces';
 import { apiClient } from '../../libs/api/client.js';
 import { formatCurrency, formatDate, getOrderStatusColor, getOrderStatusLabel } from '../../libs/utils/index.js';
+import ErrorUI from '../../components/Error.tsx';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -240,47 +241,6 @@ export default function AdminOrders() {
     }
   ];
 
-  const customStyles = {
-    header: {
-      style: {
-        minHeight: '56px',
-      },
-    },
-    headRow: {
-      style: {
-        backgroundColor: '#f9fafb',
-        borderBottomWidth: '1px',
-        borderBottomColor: '#e5e7eb',
-      },
-    },
-    headCells: {
-      style: {
-        fontSize: '12px',
-        fontWeight: '600',
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-      },
-    },
-    cells: {
-      style: {
-        fontSize: '14px',
-        color: '#111827',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-      },
-    },
-    rows: {
-      style: {
-        '&:hover': {
-          backgroundColor: '#f9fafb',
-        },
-      },
-    },
-  };
-
   const getStatusStats = () => {
     const stats = Object.values(OrderStatus).map(status => ({
       status,
@@ -379,6 +339,8 @@ export default function AdminOrders() {
         </div>
       </div>
 
+      {error && (<ErrorUI error={error} />)}
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <DataTable
           columns={columns}
@@ -391,7 +353,6 @@ export default function AdminOrders() {
           paginationRowsPerPageOptions={[5, 10, 15, 20]}
           onChangeRowsPerPage={setPerPage}
           onChangePage={setCurrentPage}
-          // customStyles={customStyles}
           highlightOnHover
           striped
           responsive

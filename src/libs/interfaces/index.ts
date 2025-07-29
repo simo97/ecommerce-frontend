@@ -62,7 +62,7 @@ export interface Cart extends BaseEntity {
 
 export interface CartItem extends BaseEntity {
   quantity: number;
-  cart: Cart;
+  cart?: Cart;
   cartId: string;
   product: Product;
   productId: string;

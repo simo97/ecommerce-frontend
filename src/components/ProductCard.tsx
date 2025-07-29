@@ -1,4 +1,4 @@
-import { type Product, type ProductCardProps } from '../libs/interfaces';
+import { type ProductCardProps } from '../libs/interfaces';
 
 export default function ProductCard({ 
   product, 

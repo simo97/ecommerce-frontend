@@ -199,7 +199,7 @@ export default function CategoriesPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
-                {categories.reduce((sum, cat) => sum + cat.productCount, 0)}
+                {categories.reduce((sum, cat) => sum + cat.productCount!, 0)}
               </div>
               <div className="text-sm text-gray-600">Produits totaux</div>
             </div>
@@ -211,7 +211,7 @@ export default function CategoriesPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
-                {Math.round(categories.reduce((sum, cat) => sum + cat.productCount, 0) / categories.length)}
+                {Math.round(categories.reduce((sum, cat) => sum + cat.productCount!, 0) / categories.length)}
               </div>
               <div className="text-sm text-gray-600">Produits/catégorie</div>
             </div>

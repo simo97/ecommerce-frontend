@@ -8,60 +8,76 @@ export default function HomePage() {
   // test products
   const sampleProducts = [
     {
-      id: 1,
+      id: '1',
       name: 'Smartphone Premium',
       description: 'Téléphone haute performance avec écran OLED',
       price: 699,
-      category: 'electronique'
+      category: 'electronique',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 2,
+      id: '2',
       name: 'Chaussures de Sport',
       description: 'Baskets confortables pour le running',
       price: 89,
-      category: 'mode'
+      category: 'mode',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 3,
+      id: '3',
       name: 'Casque Audio',
       description: 'Son immersif avec réduction de bruit',
       price: 159,
-      category: 'electronique'
+      category: 'electronique',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 4,
+      id: '4',
       name: 'Sac à Dos',
       description: 'Sac ergonomique pour ordinateur portable',
       price: 45,
-      category: 'accessoires'
+      category: 'accessoires',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 5,
+      id: '5',
       name: 'Montre Connectée',
       description: 'Suivi fitness et notifications intelligentes',
       price: 249,
-      category: 'electronique'
+      category: 'electronique',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 6,
+      id: '6',
       name: 'Livre de Cuisine',
       description: 'Recettes traditionnelles et modernes',
       price: 25,
-      category: 'livres'
+      category: 'livres',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 7,
+      id: '7',
       name: 'Lampe de Bureau',
       description: 'Éclairage LED ajustable et économique',
       price: 39,
-      category: 'maison'
+      category: 'maison',
+      stockQuantity: 25,
+      isActive: true,
     },
     {
-      id: 8,
+      id: '8',
       name: 'Café Premium',
       description: 'Grains torréfiés artisanalement',
       price: 15,
-      category: 'alimentation'
+      category: 'alimentation',
+      stockQuantity: 25,
+      isActive: true,
     }
   ];
 
