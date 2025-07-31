@@ -23,11 +23,16 @@ export abstract class BaseResource {
     private createHttpClient() {
         return async (url: string, options: RequestInit = {}) => {
             const fullUrl = url.startsWith('http') ? url : `${this.baseURL}${url}`;
+            
+            // Automatically handle authentication
+            const headers = {
+                ...this.defaultHeaders,
+                ...this.getAuthHeaders(),
+                ...options.headers,
+            };
+            
             const config: RequestInit = {
-                headers: {
-                    ...this.defaultHeaders,
-                    ...options.headers,
-                },
+                headers,
                 ...options,
             };
 
@@ -38,6 +43,26 @@ export abstract class BaseResource {
                 throw new Error(`HTTP request failed: ${error}`);
             }
         };
+    }
+
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {};
+        
+        // Check for auth token first (authenticated user)
+        const authToken = localStorage.getItem('authToken');
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        } else {
+            // Use session token for anonymous users
+            let sessionToken = localStorage.getItem('sessionToken');
+            if (!sessionToken) {
+                sessionToken = crypto.randomUUID();
+                localStorage.setItem('sessionToken', sessionToken);
+            }
+            headers['x-session-token'] = sessionToken;
+        }
+        
+        return headers;
     }
 
     protected async get<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {

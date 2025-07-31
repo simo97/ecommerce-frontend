@@ -1,85 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
+import type { Product, ProductQuery } from '../libs/interfaces';
+import { apiClient } from '../libs/api/client';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [priceRange, setPriceRange] = useState('');
 
-  // test products
-  const sampleProducts = [
-    {
-      id: '1',
-      name: 'Smartphone Premium',
-      description: 'Téléphone haute performance avec écran OLED',
-      price: 699,
-      category: 'electronique',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Chaussures de Sport',
-      description: 'Baskets confortables pour le running',
-      price: 89,
-      category: 'mode',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '3',
-      name: 'Casque Audio',
-      description: 'Son immersif avec réduction de bruit',
-      price: 159,
-      category: 'electronique',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '4',
-      name: 'Sac à Dos',
-      description: 'Sac ergonomique pour ordinateur portable',
-      price: 45,
-      category: 'accessoires',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '5',
-      name: 'Montre Connectée',
-      description: 'Suivi fitness et notifications intelligentes',
-      price: 249,
-      category: 'electronique',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '6',
-      name: 'Livre de Cuisine',
-      description: 'Recettes traditionnelles et modernes',
-      price: 25,
-      category: 'livres',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '7',
-      name: 'Lampe de Bureau',
-      description: 'Éclairage LED ajustable et économique',
-      price: 39,
-      category: 'maison',
-      stockQuantity: 25,
-      isActive: true,
-    },
-    {
-      id: '8',
-      name: 'Café Premium',
-      description: 'Grains torréfiés artisanalement',
-      price: 15,
-      category: 'alimentation',
-      stockQuantity: 25,
-      isActive: true,
-    }
-  ];
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [perPage,] = useState(10);
+  const [products, setProducts] = useState<Product[]>([]);
+
+
+  const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+  
+      try {
+        const query: ProductQuery = {
+        };
+  
+        const response = await apiClient.products.getProducts(query);
+        
+        if (response.data.data.length > 0) {
+          setProducts(response.data.data);
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to load products');
+        console.error('Products API error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [ perPage,]);
 
   const categories = [
     { value: '', label: 'Toutes les catégories' },
@@ -100,7 +57,7 @@ export default function HomePage() {
   ];
 
   // Filter products based on selected filters
-  const filteredProducts = sampleProducts.filter(product => {
+  const filteredProducts = products.filter(product => {
     const categoryMatch = !selectedCategory || product.category === selectedCategory;
     
     let priceMatch = true;
@@ -198,20 +155,33 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* No Results */}
-        {filteredProducts.length === 0 && (
+      
+        {isLoading ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg className="w-16 h-16 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4V2m0 20v-2m8.485-14.485l1.414-1.414M4.929 19.071l1.414-1.414M20 12h2m-20 0h2m14.485 8.485l1.414 1.414M4.929 4.929l1.414 1.414" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">
-              Aucun produit trouvé
-            </h3>
-            <p className="text-gray-500">
-              Essayez de modifier vos filtres pour voir plus de produits.
-            </p>
+          </div>):
+          filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
+                Aucun produit trouvé
+              </h3>
+              <p className="text-gray-500">
+                Essayez de modifier vos filtres pour voir plus de produits.
+              </p>
+            </div>
+        )}
+        {error && (
+          <div className="text-red-500 text-center py-4">
+            <p>{error}</p> 
           </div>
         )}
       </div>

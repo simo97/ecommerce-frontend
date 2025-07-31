@@ -71,7 +71,7 @@ export default function ProductCard({
               showAddToCart ? "flex-1" : "w-full"
             }`}
           >
-            Voir d�tails
+            Voir le produit
           </a>
           
           {showAddToCart && (

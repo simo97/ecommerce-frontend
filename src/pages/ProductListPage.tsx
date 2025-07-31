@@ -1,129 +1,73 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 import ProductCard from '../components/ProductCard';
-import { type Product } from '../libs/interfaces';
+import { apiClient } from '../libs/api/client.js';
+
+import { type Product, type ProductQuery } from '../libs/interfaces';
 
 export default function ProductListPage() {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
-  
-  const [products] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Smartphone Premium',
-      description: 'Téléphone haute performance avec écran OLED',
-      price: 699,
-      stockQuantity: 15,
-      isActive: true,
-      category: 'electronique'
-    },
-    {
-      id: '2',
-      name: 'Chaussures de Sport',
-      description: 'Baskets confortables pour le running',
-      price: 89,
-      stockQuantity: 32,
-      isActive: true,
-      category: 'mode'
-    },
-    {
-      id: '3',
-      name: 'Casque Audio',
-      description: 'Son immersif avec réduction de bruit',
-      price: 159,
-      stockQuantity: 8,
-      isActive: true,
-      category: 'electronique'
-    },
-    {
-      id: '4',
-      name: 'Sac à Dos',
-      description: 'Sac ergonomique pour ordinateur portable',
-      price: 45,
-      stockQuantity: 25,
-      isActive: true,
-      category: 'accessoires'
-    },
-    {
-      id: '5',
-      name: 'Montre Connectée',
-      description: 'Suivi fitness et notifications intelligentes',
-      price: 249,
-      stockQuantity: 12,
-      isActive: true,
-      category: 'electronique'
-    },
-    {
-      id: '6',
-      name: 'Livre de Cuisine',
-      description: 'Recettes traditionnelles et modernes',
-      price: 25,
-      stockQuantity: 50,
-      isActive: true,
-      category: 'livres'
-    },
-    {
-      id: '7',
-      name: 'Lampe de Bureau',
-      description: 'Éclairage LED ajustable et économique',
-      price: 39,
-      stockQuantity: 18,
-      isActive: true,
-      category: 'maison'
-    },
-    {
-      id: '8',
-      name: 'Café Premium',
-      description: 'Grains torréfiés artisanalement',
-      price: 15,
-      stockQuantity: 75,
-      isActive: true,
-      category: 'alimentation'
-    },
-    {
-      id: '9',
-      name: 'Écouteurs Bluetooth',
-      description: 'Son cristallin sans fil',
-      price: 79,
-      stockQuantity: 20,
-      isActive: true,
-      category: 'electronique'
-    },
-    {
-      id: '10',
-      name: 'T-shirt Bio',
-      description: 'Coton biologique ultra-confortable',
-      price: 35,
-      stockQuantity: 40,
-      isActive: true,
-      category: 'mode'
-    },
-    {
-      id: '11',
-      name: 'Lunettes de Soleil',
-      description: 'Protection UV 100% style moderne',
-      price: 55,
-      stockQuantity: 15,
-      isActive: true,
-      category: 'accessoires'
-    },
-    {
-      id: '12',
-      name: 'Roman Bestseller',
-      description: 'Fiction captivante prix littéraire',
-      price: 18,
-      stockQuantity: 30,
-      isActive: true,
-      category: 'livres'
-    }
-  ]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [perPage] = useState(10);
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categoryFilter || '');
-  const [priceRange, setPriceRange] = useState('');
-  const [sortBy, setSortBy] = useState('name');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+
+  const [filters, setFilters] = useState({
+    search: '',
+    category: categoryFilter || '',
+    priceMin: '',
+    priceMax: '',
+    sortBy: 'name'
+  });
+  
+
+  const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+  
+      try {
+        const query: ProductQuery = {
+          page: currentPage,
+          limit: perPage,
+          search: filters.search || undefined,
+          category: filters.category || undefined,
+        };
+  
+        const response = await apiClient.products.getProducts(query);
+        
+        setProducts(response.data.data);
+        setTotalProducts(response.data.meta.total);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to load products');
+        console.error('Products API error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+  };
+
+  const updateFilter = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      category: '',
+      priceMin: '',
+      priceMax: '',
+      sortBy: 'name'
+    });
+    setCurrentPage(1);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [currentPage, perPage, filters]);
 
   const categories = [
     { value: '', label: 'Toutes les catégories' },
@@ -151,63 +95,15 @@ export default function ProductListPage() {
     { value: 'stock', label: 'Stock disponible' }
   ];
 
-  // Update selected category when URL changes
+  // Update category filter when URL changes
   useEffect(() => {
-    if (categoryFilter) {
-      setSelectedCategory(categoryFilter);
+    if (categoryFilter && categoryFilter !== filters.category) {
+      setFilters(prev => ({ ...prev, category: categoryFilter }));
     }
   }, [categoryFilter]);
 
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    
-    let matchesPrice = true;
-    if (priceRange) {
-      const [min, max] = priceRange.split('-').map(p => p.replace('+', ''));
-      if (priceRange === '200+') {
-        matchesPrice = product.price >= 200;
-      } else {
-        matchesPrice = product.price >= parseInt(min) && product.price <= parseInt(max);
-      }
-    }
-
-    return matchesSearch && matchesCategory && matchesPrice && product.isActive;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'price':
-        return a.price - b.price;
-      case 'price-desc':
-        return b.price - a.price;
-      case 'stock':
-        return b.stockQuantity - a.stockQuantity;
-      default:
-        return 0;
-    }
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = sortedProducts.slice(startIndex, startIndex + itemsPerPage);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('');
-    setPriceRange('');
-    setSortBy('name');
-    setCurrentPage(1);
-  };
+  // Calculate pagination from API data
+  const totalPages = Math.ceil(totalProducts / perPage);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.value === categoryId);
@@ -225,19 +121,19 @@ export default function ProductListPage() {
               <a href="/" className="hover:text-primary transition-colors">Accueil</a>
               <span>/</span>
               <a href="/products" className="hover:text-primary transition-colors">Produits</a>
-              {selectedCategory && (
+              {filters.category && (
                 <>
                   <span>/</span>
-                  <span className="text-gray-800">{getCategoryName(selectedCategory)}</span>
+                  <span className="text-gray-800">{getCategoryName(filters.category)}</span>
                 </>
               )}
             </div>
           </nav>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {selectedCategory ? getCategoryName(selectedCategory) : 'Tous les produits'}
+            {filters.category ? getCategoryName(filters.category) : 'Tous les produits'}
           </h1>
           <p className="text-gray-600">
-            {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
+            {totalProducts} produit{totalProducts > 1 ? 's' : ''} trouvé{totalProducts > 1 ? 's' : ''}
           </p>
         </div>
 
@@ -251,8 +147,8 @@ export default function ProductListPage() {
                 <input
                   type="text"
                   placeholder="Rechercher un produit..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={filters.search}
+                  onChange={(e) => updateFilter('search', e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
@@ -266,8 +162,8 @@ export default function ProductListPage() {
             {/* Category Filter */}
             <div>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={filters.category}
+                onChange={(e) => updateFilter('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {categories.map(category => (
@@ -281,8 +177,12 @@ export default function ProductListPage() {
             {/* Price Filter */}
             <div>
               <select
-                value={priceRange}
-                onChange={(e) => setPriceRange(e.target.value)}
+                value={`${filters.priceMin}-${filters.priceMax}`}
+                onChange={(e) => {
+                  const [min, max] = e.target.value.split('-');
+                  updateFilter('priceMin', min);
+                  updateFilter('priceMax', max);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {priceRanges.map(range => (
@@ -296,8 +196,8 @@ export default function ProductListPage() {
             {/* Sort */}
             <div>
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                value={filters.sortBy}
+                onChange={(e) => updateFilter('sortBy', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {sortOptions.map(option => (
@@ -323,11 +223,36 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        {paginatedProducts.length > 0 ? (
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement des produits...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-red-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-700 mb-2">
+              Erreur de chargement
+            </h3>
+            <p className="text-gray-500 mb-4">{error}</p>
+            <button
+              onClick={fetchProducts}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
+            >
+              Réessayer
+            </button>
+          </div>
+        ) : products.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {paginatedProducts.map(product => (
+              {products.map(product => (
                 <ProductCard
                   key={product.id}
                   product={product}

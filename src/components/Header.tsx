@@ -1,6 +1,8 @@
 import { Link } from 'react-router';
 
-export default function Header() {
+export default function Header({ isAuthenticated }: {user: any, isAuthenticated: boolean}) {
+
+
   return (
     <header className="bg-primary text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,7 +36,6 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Right side: Cart and User */}
           <div className="flex items-center space-x-4">
             {/* Cart */}
             <Link 
@@ -49,22 +50,33 @@ export default function Header() {
               </span>
             </Link>
 
-            {/* User Menu */}
-            <div className="flex items-center space-x-2">
+            {isAuthenticated ? (
               <Link 
-                to="/login" 
+                to="/profile"
                 className="hover:text-secondary transition-colors duration-200"
               >
-                Connexion
+                <svg className="w-6 h-6" fill="none" stroke=" currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />   
+                </svg>
               </Link>
-              <span className="text-secondary">|</span>
-              <Link 
-                to="/register" 
-                className="hover:text-secondary transition-colors duration-200"
-              >
-                S'inscrire
-              </Link>
-            </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link 
+                  to="/login" 
+                  className="hover:text-secondary transition-colors duration-200"
+                >
+                  Connexion
+                </Link>
+                <span className="text-secondary">|</span>
+                <Link 
+                  to="/register" 
+                  className="hover:text-secondary transition-colors duration-200"
+                >
+                  S'inscrire
+                </Link>
+              </div>
+            )}
+            
           </div>
 
           {/* Mobile menu button */}

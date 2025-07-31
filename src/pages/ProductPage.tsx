@@ -1,94 +1,59 @@
 import { useParams } from 'react-router';
 import { useState, useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { type Product } from '../libs/interfaces';
+import { apiClient } from '../libs/api/client.js';
+import { userAtom } from '../libs/atoms.js';
 
 export default function ProductPage() {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user] = useAtom(userAtom);
+
+  console.log({user})
+
+  const fetchProduct = async () => {
+    if (productId === undefined) {
+      setProduct(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    
+    try {
+      const response = await apiClient.products.getProduct(productId);
+      setProduct(response.data);
+    } catch (error) {
+      console.error('Failed to fetch product:', error);
+      setProduct(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = async () => {
+    if (!product || product.stockQuantity <= 0) return;
+    setLoading(true)
+    try {
+      if (user) {
+        // User is authenticated, use regular cart
+        await apiClient.cart.addToCart({ productId: product.id!, quantity: 1 });
+      } else {
+        // User is not authenticated, use anonymous cart
+        await apiClient.cart.addToAnonymousCart({ productId: product.id!, quantity: 1 });
+      }
+      alert('Produit ajouté au panier avec succès!');
+      setLoading(false)
+    } catch (error) {
+      console.error('Failed to add product to cart:', error);
+      alert('Échec de l\'ajout du produit au panier.');
+      setLoading(false)
+    }
+  };
 
   useEffect(() => {
-    // Mock product data - replace with actual API call
-    const mockProducts: Product[] = [
-      {
-        id: '1',
-        name: 'Smartphone Premium',
-        description: 'Téléphone haute performance avec écran OLED de 6.7 pouces, processeur octa-core, 8GB RAM, 256GB stockage, triple caméra 108MP, batterie 5000mAh avec charge rapide. Design élégant et résistant à l\'eau IP68.',
-        price: 699,
-        stockQuantity: 15,
-        isActive: true,
-        categoryId: 'electronique'
-      },
-      {
-        id: '2',
-        name: 'Chaussures de Sport',
-        description: 'Baskets confortables pour le running avec semelle amortissante en mousse, upper respirant en mesh, support de la voûte plantaire. Parfaites pour la course et l\'entraînement quotidien.',
-        price: 89,
-        stockQuantity: 32,
-        isActive: true,
-        categoryId: 'mode'
-      },
-      {
-        id: '3',
-        name: 'Casque Audio',
-        description: 'Son immersif avec réduction de bruit active, autonomie 30h, charge rapide 15min = 3h d\'écoute, compatible Bluetooth 5.0, microphone intégré pour appels.',
-        price: 159,
-        stockQuantity: 8,
-        isActive: true,
-        categoryId: 'electronique'
-      },
-      {
-        id: '4',
-        name: 'Sac à Dos',
-        description: 'Sac ergonomique pour ordinateur portable jusqu\'à 17 pouces, compartiments multiples, tissu résistant à l\'eau, bretelles rembourrées, parfait pour travail et voyage.',
-        price: 45,
-        stockQuantity: 25,
-        isActive: true,
-        categoryId: 'accessoires'
-      },
-      {
-        id: '5',
-        name: 'Montre Connectée',
-        description: 'Suivi fitness et notifications intelligentes, GPS intégré, mesure fréquence cardiaque, étanche 50m, autonomie 7 jours, écran AMOLED.',
-        price: 249,
-        stockQuantity: 12,
-        isActive: true,
-        categoryId: 'electronique'
-      },
-      {
-        id: '6',
-        name: 'Livre de Cuisine',
-        description: 'Recettes traditionnelles et modernes de la cuisine française, 300 pages, photos couleur, techniques de base expliquées, index des ingrédients.',
-        price: 25,
-        stockQuantity: 50,
-        isActive: true,
-        categoryId: 'livres'
-      },
-      {
-        id: '7',
-        name: 'Lampe de Bureau',
-        description: 'Éclairage LED ajustable et économique, 3 niveaux d\'intensité, bras flexible, base stable, protection oculaire, consommation 12W.',
-        price: 39,
-        stockQuantity: 18,
-        isActive: true,
-        categoryId: 'maison'
-      },
-      {
-        id: '8',
-        name: 'Café Premium',
-        description: 'Grains torréfiés artisanalement, origine unique Colombie, notes de chocolat et caramel, mouture disponible, sachet 500g refermable.',
-        price: 15,
-        stockQuantity: 75,
-        isActive: true,
-        categoryId: 'alimentation'
-      }
-    ];
-
-    setTimeout(() => {
-      const foundProduct = mockProducts.find(p => p.id === productId);
-      setProduct(foundProduct || null);
-      setLoading(false);
-    }, 500);
+    fetchProduct()
   }, [productId]);
 
   if (loading) {
@@ -222,6 +187,7 @@ export default function ProductPage() {
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                     disabled={product.stockQuantity === 0 || !product.isActive}
+                    onClick={addToCart}
                   >
                     {product.stockQuantity === 0 
                       ? 'Rupture de stock' 

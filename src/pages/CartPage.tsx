@@ -1,71 +1,133 @@
-import { useState } from 'react';
-import { type CartItem } from '../libs/interfaces';
+import { useState, useEffect } from 'react';
+import { useAtom } from 'jotai';
+import { type CartItem, type CreateOrderDto } from '../libs/interfaces';
+import { apiClient } from '../libs/api/client.js';
+import { userAtom } from '../libs/atoms.js';
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      quantity: 2,
-      cartId: 'cart-123',
-      productId: 'product-123',
-      product: {
-        id: '1',
-        name: 'Smartphone Premium',
-        description: 'Téléphone haute performance avec écran OLED',
-        price: 699,
-        stockQuantity: 25,
-        isActive: true,
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [user] = useAtom(userAtom);
+
+  console.log({user})
+
+  const fetchCart = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (user) {
+        response = await apiClient.cart.getCart();
+        setCartItems(response.data.items || []);
       }
-    },
-    {
-      id: '2',
-      quantity: 1,
-      cartId: 'cart-123',
-      productId: 'product-123',
-      product: {
-        id: '3',
-        name: 'Casque Audio',
-        description: 'Son immersif avec réduction de bruit',
-        price: 159,
-        stockQuantity: 25,
-        isActive: true,
-      }
-    },
-    {
-      id: '3',
-      quantity: 3,
-      cartId: 'cart-123',
-      productId: 'product-123',
-      product: {
-        id: '8',
-        name: 'Café Premium',
-        description: 'Grains torréfiés artisanalement',
-        price: 15,
-        stockQuantity: 25,
-        isActive: true,
-      }
+      
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+      setCartItems([]);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const updateQuantity = (itemId: string, newQuantity: number) => {
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems(items =>
-      items.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    try {
+      if (user) {
+        await apiClient.cart.updateCartItem(itemId, { quantity: newQuantity });
+      } else {
+        await apiClient.cart.updateAnonymousCartItem(itemId, { quantity: newQuantity });
+      }
+      setCartItems(items =>
+        items.map(item =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+    }
   };
 
-  const removeItem = (itemId: string) => {
-    setCartItems(items => items.filter(item => item.id !== itemId));
+  const removeItem = async (itemId: string) => {
+    try {
+      if (user) {
+        await apiClient.cart.removeCartItem(itemId);
+      } else {
+        await apiClient.cart.removeAnonymousCartItem(itemId);
+      }
+      setCartItems(items => items.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const clearCart = async () => {
+    try {
+      if (user) {
+        await apiClient.cart.emptyCart();
+      } else {
+        await apiClient.cart.emptyAnonymousCart();
+      }
+      setCartItems([]);
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+    }
   };
+
+  const createOrder = async (orderData: CreateOrderDto = {}) => {
+    if (cartItems.length === 0) {
+      alert('Votre panier est vide');
+      return;
+    }
+
+    setOrderLoading(true);
+    try {
+      let response;
+      if (user) {
+        // Create order for authenticated user
+        response = await apiClient.orders.createOrder(orderData);
+      } else {
+        // Create anonymous order
+        response = await apiClient.orders.createAnonymousOrder(orderData);
+      }
+      
+      // Clear cart after successful order creation
+      await clearCart();
+      
+      alert(`Commande créée avec succès! ID: ${response.data.id}`);
+      
+      // Optionally redirect to order confirmation page
+      // window.location.href = `/orders/${response.data.id}`;
+      
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      alert('Échec de la création de la commande. Veuillez réessayer.');
+    } finally {
+      setOrderLoading(false);
+    }
+  };
+
+  const handleCheckout = () => {
+    // Simple checkout - create order without additional data
+    createOrder();
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, [user]); 
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement du panier...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -219,8 +281,16 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-3">
-                <button className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-600 transition-colors">
-                  Procéder au paiement
+                <button 
+                  onClick={handleCheckout}
+                  disabled={orderLoading || cartItems.length === 0}
+                  className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                    orderLoading || cartItems.length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-primary text-white hover:bg-primary-600'
+                  }`}
+                >
+                  {orderLoading ? 'Création de la commande...' : 'Procéder au paiement'}
                 </button>
                 <a
                   href="/"

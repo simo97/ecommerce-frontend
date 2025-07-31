@@ -28,7 +28,7 @@ export class ProductService extends BaseResource {
       });
     }
 
-    const endpoint = `/catalogue${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    const endpoint = `/catalogue/all${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
     return this.get<DataListResponse<Product>>(endpoint);
   }
 

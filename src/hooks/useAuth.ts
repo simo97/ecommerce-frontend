@@ -34,6 +34,17 @@ export function useAuth() {
           setIsAuthenticated(false);
           setUser(null);
           setAuthToken(null);
+          
+          // Get or create session token for anonymous users
+          let sessionToken = localStorage.getItem('sessionToken');
+          if (!sessionToken) {
+            sessionToken = crypto.randomUUID();
+            localStorage.setItem('sessionToken', sessionToken);
+          }
+          
+          
+          // Set session token in API client for anonymous operations
+          apiClient.setSessionToken(sessionToken);
         }
       } catch (error) {
         console.error('Error parsing stored auth data:', error);
